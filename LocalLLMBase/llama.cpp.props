@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  llama.cpp (external/llama.cpp サブモジュール) を CMake でビルドし、静的リンクするための設定。
+  ビルド成果物は $(SolutionDir)build\llama.cpp\<Platform>\<Configuration>\ 以下に出力される。
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <LlamaSourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\external\llama.cpp'))\</LlamaSourceDir>
+    <LlamaConfiguration Condition="'$(Configuration)'=='Debug'">Debug</LlamaConfiguration>
+    <LlamaConfiguration Condition="'$(Configuration)'!='Debug'">Release</LlamaConfiguration>
+    <LlamaBuildRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\build\llama.cpp\$(Platform)\$(LlamaConfiguration)'))\</LlamaBuildRoot>
+    <LlamaBuildDir>$(LlamaBuildRoot)cmake\</LlamaBuildDir>
+    <LlamaInstallDir>$(LlamaBuildRoot)install\</LlamaInstallDir>
+    <!-- 追加の CMake オプション (例: -DGGML_CUDA=ON)。変更後はリビルドで再構成される -->
+    <LlamaCMakeOptions Condition="'$(LlamaCMakeOptions)'==''"></LlamaCMakeOptions>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(LlamaInstallDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(LlamaInstallDir)lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>llama.lib;ggml.lib;ggml-base.lib;ggml-cpu.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

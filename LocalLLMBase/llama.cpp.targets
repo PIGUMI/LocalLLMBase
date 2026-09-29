@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  LocalLLMBase のビルド前に llama.cpp を自動で構成・ビルド・インストールする。
+    1. サブモジュールが未取得なら git submodule update (init) を実行
+    2. CMakeCache が無い / オプションが変わった場合のみ cmake configure
+    3. cmake build (インクリメンタル) → cmake install
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- Visual Studio 同梱の CMake を優先し、無ければ PATH 上の cmake を使う -->
+    <LlamaCMakeExe Condition="'$(LlamaCMakeExe)'=='' and Exists('$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe')">$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe</LlamaCMakeExe>
+    <LlamaCMakeExe Condition="'$(LlamaCMakeExe)'==''">cmake</LlamaCMakeExe>
+
+    <LlamaCMakeGenerator Condition="'$(VisualStudioVersion)'=='17.0'">Visual Studio 17 2022</LlamaCMakeGenerator>
+    <LlamaCMakeGenerator Condition="'$(VisualStudioVersion)'=='18.0'">Visual Studio 18 2026</LlamaCMakeGenerator>
+    <LlamaCMakeGeneratorArg Condition="'$(LlamaCMakeGenerator)'!=''">-G &quot;$(LlamaCMakeGenerator)&quot;</LlamaCMakeGeneratorArg>
+
+    <LlamaCMakeArgs>$(LlamaCMakeGeneratorArg) -A x64 -T $(PlatformToolset),host=x64
+      -DBUILD_SHARED_LIBS=OFF
+      -DLLAMA_BUILD_COMMON=OFF
+      -DLLAMA_BUILD_TESTS=OFF
+      -DLLAMA_BUILD_TOOLS=OFF
+      -DLLAMA_BUILD_EXAMPLES=OFF
+      -DLLAMA_BUILD_SERVER=OFF
+      -DLLAMA_BUILD_APP=OFF
+      -DLLAMA_OPENSSL=OFF
+      &quot;-DCMAKE_INSTALL_PREFIX=$(LlamaInstallDir.TrimEnd('\'))&quot;
+      $(LlamaCMakeOptions)</LlamaCMakeArgs>
+    <LlamaCMakeArgs>$([System.Text.RegularExpressions.Regex]::Replace('$(LlamaCMakeArgs)', '\s+', ' ').Trim())</LlamaCMakeArgs>
+    <LlamaStampFile>$(LlamaBuildDir)msbuild-configure.stamp</LlamaStampFile>
+  </PropertyGroup>
+
+  <Target Name="LlamaCheckPlatform" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(Platform)'!='x64'" Text="llama.cpp は x64 のみサポートしています (現在: $(Platform))。ソリューションプラットフォームを x64 にしてください。" />
+  </Target>
+
+  <Target Name="LlamaInitSubmodule" DependsOnTargets="LlamaCheckPlatform" Condition="!Exists('$(LlamaSourceDir)CMakeLists.txt')">
+    <Message Importance="high" Text="llama.cpp サブモジュールを取得しています..." />
+    <Exec Command="git submodule update --init --recursive -- external/llama.cpp" WorkingDirectory="$(MSBuildThisFileDirectory).." />
+  </Target>
+
+  <Target Name="LlamaConfigure" DependsOnTargets="LlamaInitSubmodule">
+    <ReadLinesFromFile File="$(LlamaStampFile)" Condition="Exists('$(LlamaStampFile)')">
+      <Output TaskParameter="Lines" PropertyName="_LlamaPrevArgs" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <_LlamaNeedConfigure Condition="!Exists('$(LlamaBuildDir)CMakeCache.txt') or '$(_LlamaPrevArgs)'!='$(LlamaCMakeArgs)'">true</_LlamaNeedConfigure>
+    </PropertyGroup>
+    <Message Importance="high" Condition="'$(_LlamaNeedConfigure)'=='true'" Text="llama.cpp を構成しています ($(LlamaConfiguration))..." />
+    <Exec Condition="'$(_LlamaNeedConfigure)'=='true'"
+          Command="&quot;$(LlamaCMakeExe)&quot; -S &quot;$(LlamaSourceDir.TrimEnd('\'))&quot; -B &quot;$(LlamaBuildDir.TrimEnd('\'))&quot; --fresh $(LlamaCMakeArgs)" />
+    <WriteLinesToFile Condition="'$(_LlamaNeedConfigure)'=='true'" File="$(LlamaStampFile)" Lines="$(LlamaCMakeArgs)" Overwrite="true" />
+  </Target>
+
+  <Target Name="LlamaBuild" DependsOnTargets="LlamaConfigure" BeforeTargets="ClCompile">
+    <Message Importance="high" Text="llama.cpp をビルドしています ($(LlamaConfiguration))..." />
+    <Exec Command="&quot;$(LlamaCMakeExe)&quot; --build &quot;$(LlamaBuildDir.TrimEnd('\'))&quot; --config $(LlamaConfiguration) --parallel" />
+    <Exec Command="&quot;$(LlamaCMakeExe)&quot; --install &quot;$(LlamaBuildDir.TrimEnd('\'))&quot; --config $(LlamaConfiguration)" StandardOutputImportance="low" />
+  </Target>
+
+  <Target Name="LlamaClean" AfterTargets="Clean">
+    <RemoveDir Directories="$(LlamaBuildRoot)" />
+  </Target>
+</Project>
