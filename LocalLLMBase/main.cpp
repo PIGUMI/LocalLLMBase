@@ -17,7 +17,7 @@ int main()
 
 	// 実際にモデルを読み込む
 	llama_model* model = llama_model_load_from_file(
-		"LLMModel/gemma-4-E4B-it-Q4_K_M.gguf",
+		"LLMModel/gemma-4-E4B-it-Q4_K_M-00001-of-00004.gguf",
 		params
 	);
 

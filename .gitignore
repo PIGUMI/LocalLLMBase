@@ -3,4 +3,5 @@ build/
 x64/
 Win32/
 *.user
-*.gguf
+# 分割前のモデル (LFS の 1 ファイル 2GB 上限を超えるため除外)
+LocalLLMBase/LLMModel/gemma-4-E4B-it-Q4_K_M.gguf
