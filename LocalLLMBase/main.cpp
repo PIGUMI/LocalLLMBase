@@ -4,6 +4,19 @@
 #include <Windows.h>
 #include "llama.h"
 
+/*
+* このサンプルコードは、llama.cppを使用してC++でLLMモデルを読み込み、推論を行う基本的な例です。
+* GPUを使用せず、CPUのみで動作するように設定されています。
+* そのため、推論速度は遅いですが、GPUがない環境でも動作します。
+*/
+
+// モデルのパスを設定する
+#define MODEL_PATH "LLMModel/gemma-4-E4B-it-Q4_K_M-00001-of-00004.gguf"
+#define CONTEXT_SIZE (4096)
+#define BATCH_SIZE (2048)
+#define THREADS (8)
+#define TREAD_BATCH (8)
+
 int main()
 {
 	// 日本語出力の文字化けをしないようにUTF-8に設定する
@@ -17,7 +30,7 @@ int main()
 
 	// 実際にモデルを読み込む
 	llama_model* model = llama_model_load_from_file(
-		"LLMModel/gemma-4-E4B-it-Q4_K_M-00001-of-00004.gguf",
+		MODEL_PATH,
 		params
 	);
 
@@ -32,10 +45,10 @@ int main()
 
 	// コンテキストの作成
 	llama_context_params CtxParams = llama_context_default_params();
-	CtxParams.n_ctx		= 4096; // 扱えるトークン数の最大値を設定する
-	CtxParams.n_batch	= 2048; // 一度に扱えるトークン数の最大値を設定する
-	CtxParams.n_threads = 8;    // 生成時に使用するスレッド数を設定する
-	CtxParams.n_threads_batch = 8; // プロンプト処理時に使用するスレッド数を設定する
+	CtxParams.n_ctx		= CONTEXT_SIZE; // 扱えるトークン数の最大値を設定する
+	CtxParams.n_batch	= BATCH_SIZE; // 一度に扱えるトークン数の最大値を設定する
+	CtxParams.n_threads = THREADS;    // 生成時に使用するスレッド数を設定する
+	CtxParams.n_threads_batch = TREAD_BATCH; // プロンプト処理時に使用するスレッド数を設定する
 
 	llama_context* ctx = llama_init_from_model(model, CtxParams);
 
@@ -58,7 +71,7 @@ int main()
 	// プロンプトの作成とトークン化
 
 	// AIに質問する内容を設定する
-	std::string user = "多言語に比べてC++を学ぶメリットは何ですか？ 日本語で回答してください。";
+	std::string user = "多言語に比べてC++を学ぶメリットは何ですか？ 簡潔に日本語で回答してください。";
 
 	// プロンプトの作成
 	std::string prompt = "<|turn>user\n" + user + "<turn|>\n<|turn>model\n";
