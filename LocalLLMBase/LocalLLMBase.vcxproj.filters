@@ -10,9 +10,17 @@
     <ClCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="LLM.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="llama.cpp.props" />
     <None Include="llama.cpp.targets" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="LLM.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
