@@ -15,58 +15,68 @@ public:
 		int batch_size			= 512;
 		int threads				= 1;
 		int thread_batch		= 1;
+		int top_k				= 64;
+		int generateMaxTokens	= 512;
+		float top_p				= 0.95f;
+		float temperature		= 1.0f;
 	};
 public:
-	LLM(const Config& config,bool* result = nullptr);
-	~LLM();
-	
+	LLM() = default;
+	virtual~LLM();
+	LLM(const LLM&) = delete;
+	LLM& operator=(const LLM&) = delete;
+
+	bool Init(const Config& config);
+	void UnInit();
+
 	bool Inference(const std::string& prompt,std::string* OutPut);
 	
 
 protected:
 	/**
-	 * @brief ƒ‚ƒfƒ‹‚ğ“Ç‚İ‚Ş
-	 * @param config@ƒ‚ƒfƒ‹‚Ìİ’è
-	 * @return@¬Œ÷‚µ‚½ê‡‚ÍtrueA¸”s‚µ‚½ê‡‚Ífalse
+	 * @brief ãƒ¢ãƒ‡ãƒ«ã‚’èª­ã¿è¾¼ã‚€
+	 * @param configã€€ãƒ¢ãƒ‡ãƒ«ã®è¨­å®š
+	 * @returnã€€æˆåŠŸã—ãŸå ´åˆã¯trueã€å¤±æ•—ã—ãŸå ´åˆã¯false
 	 */
 	virtual bool LoadModel(const Config& config);
 
 	/**
-	 * @brief ƒRƒ“ƒeƒLƒXƒg‚ğì¬‚·‚é
-	 * @param config ƒ‚ƒfƒ‹‚Ìİ’è
-	 * @return ¬Œ÷‚µ‚½ê‡‚ÍtrueA¸”s‚µ‚½ê‡‚Ífalse
+	 * @brief ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆã‚’ä½œæˆã™ã‚‹
+	 * @param config ãƒ¢ãƒ‡ãƒ«ã®è¨­å®š
+	 * @return æˆåŠŸã—ãŸå ´åˆã¯trueã€å¤±æ•—ã—ãŸå ´åˆã¯false
 	 */
 	virtual bool CreateContext(const Config& config);
 
 	/**
-	 * @brief ƒTƒ“ƒvƒ‰[‚ğì¬‚·‚é
-	 * @param config ƒ‚ƒfƒ‹‚Ìİ’è
-	 * @return ¬Œ÷‚µ‚½ê‡‚ÍtrueA¸”s‚µ‚½ê‡‚Ífalse
+	 * @brief ã‚µãƒ³ãƒ—ãƒ©ãƒ¼ã‚’ä½œæˆã™ã‚‹
+	 * @param config ãƒ¢ãƒ‡ãƒ«ã®è¨­å®š
+	 * @return æˆåŠŸã—ãŸå ´åˆã¯trueã€å¤±æ•—ã—ãŸå ´åˆã¯false
 	 */
 	virtual bool CreateSampler(const Config& config);
 
 	/**
-	 * @brief ƒvƒƒ“ƒvƒg‚ğƒg[ƒNƒ“‰»‚·‚é
-	 * @param prompt ƒvƒƒ“ƒvƒg•¶š—ñ
-	 * @param result ƒg[ƒNƒ“‰»‚É¬Œ÷‚µ‚½ê‡‚ÍtrueA¸”s‚µ‚½ê‡‚Ífalse
-	 * @return ƒg[ƒNƒ“‰»‚³‚ê‚½ƒg[ƒNƒ“‚ÌƒxƒNƒ^[
+	 * @brief ãƒ—ãƒ­ãƒ³ãƒ—ãƒˆã‚’ãƒˆãƒ¼ã‚¯ãƒ³åŒ–ã™ã‚‹
+	 * @param prompt ãƒ—ãƒ­ãƒ³ãƒ—ãƒˆæ–‡å­—åˆ—
+	 * @param result ãƒˆãƒ¼ã‚¯ãƒ³åŒ–ã«æˆåŠŸã—ãŸå ´åˆã¯trueã€å¤±æ•—ã—ãŸå ´åˆã¯false
+	 * @return ãƒˆãƒ¼ã‚¯ãƒ³åŒ–ã•ã‚ŒãŸãƒˆãƒ¼ã‚¯ãƒ³ã®ãƒ™ã‚¯ã‚¿ãƒ¼
 	 */
 	virtual std::vector<llama_token> CreateTokens(const std::string& prompt,bool* result = nullptr);
 
 	/**
-	 * @brief ƒg[ƒNƒ“‚ğ“ü—Í‚Æ‚µ‚Ä„˜_‚ğs‚¤ƒ‹[ƒv
-	 * @param tokens “ü—Íƒg[ƒNƒ“‚ÌƒxƒNƒ^[
-	 * @param result „˜_‚É¬Œ÷‚µ‚½ê‡‚ÍtrueA¸”s‚µ‚½ê‡‚Ífalse
-	 * @return „˜_Œ‹‰Ê‚Ì•¶š—ñ
+	 * @brief ãƒˆãƒ¼ã‚¯ãƒ³ã‚’å…¥åŠ›ã¨ã—ã¦æ¨è«–ã‚’è¡Œã†ãƒ«ãƒ¼ãƒ—
+	 * @param tokens å…¥åŠ›ãƒˆãƒ¼ã‚¯ãƒ³ã®ãƒ™ã‚¯ã‚¿ãƒ¼
+	 * @param result æ¨è«–ã«æˆåŠŸã—ãŸå ´åˆã¯trueã€å¤±æ•—ã—ãŸå ´åˆã¯false
+	 * @return æ¨è«–çµæœã®æ–‡å­—åˆ—
 	 */
 	virtual std::string InferenceLoop(std::vector<llama_token> tokens,bool* result = nullptr);
 
 protected:
-	llama_model* m_pModel;
-	llama_context* m_pContext;
-	llama_sampler* m_pSampler;
-	const llama_vocab* m_pVocab;
-
+	llama_model* m_pModel = nullptr;
+	llama_context* m_pContext = nullptr;
+	llama_sampler* m_pSampler = nullptr;
+	const llama_vocab* m_pVocab = nullptr;
+	Config m_config;
 private:
-	static int m_nInstanceCount;	// ƒCƒ“ƒXƒ^ƒ“ƒX‚Ì”‚ğƒJƒEƒ“ƒg‚·‚é‚½‚ß‚ÌÃ“I•Ï”
+	bool m_bInitialized = false;	// åˆæœŸåŒ–æ¸ˆã¿ã‹ã©ã†ã‹ã‚’ç¤ºã™ãƒ•ãƒ©ã‚°
+	static int m_nInstanceCount;	// ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã®æ•°ã‚’ã‚«ã‚¦ãƒ³ãƒˆã™ã‚‹ãŸã‚ã®é™çš„å¤‰æ•°
 };
